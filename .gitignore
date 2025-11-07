@@ -1,0 +1,24 @@
+# local environment variables
+.env
+
+# sub applications application
+/benchmarks
+/benchmarks_signup/
+/benchmarks_study/
+
+
+# sensitive files
+/data/database/*.sql
+/data/benchmarks/uploads/**/*.csv
+/data/signup/writable
+/data/study/writable
+/data/bulkupload
+
+# these are required sql files for bootstrapping the database
+!/data/database/00-init.sql
+
+# always allow .gitkeep
+!/data/database/.gitkeep
+
+# other
+backup/

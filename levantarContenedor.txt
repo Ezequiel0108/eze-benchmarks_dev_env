@@ -1,0 +1,18 @@
+docker compose up -d
+
+Crea y levanta todos los contenedores (db, phpmyadmin, benchmarks, signup, study).
+Si la base está vacía, MariaDB ejecutará todos los .sql en /docker-entrypoint-initdb.d.
+El volumen /data/database/mysql guardará los datos para que no se pierdan al reiniciar.
+
+docker ps
+
+verificar que todo está corriendo
+
+
+docker compose run --rm migrate
+
+crea un contenedor temporal nuevo basado en el servicio migrate.
+Esto permite ejecutar el script de migraciones cada vez que tú quieras
+(sin depender de si ya corrió antes o no).
+
+
