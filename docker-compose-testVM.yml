@@ -1,0 +1,88 @@
+services:
+  db:
+    image: mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: root     
+      # in the VM is not necesary export
+      # ports:
+      # - 3306:3306
+    volumes:
+      #- ./data/database:/docker-entrypoint-initdb.d
+      - ./data/database/migrations:/docker-entrypoint-initdb.d   # Runs all .sql files on container startup (used for migrations or init data)
+      - ./data/database/mysql:/var/lib/mysql                     # Persistent data  
+  phpmyadmin:
+    image: phpmyadmin:latest                                     # Web UI for MySQL
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - db
+  
+  migrate:
+    image: mysql:8.0                                               # have bash + mysql client
+    depends_on:
+      - db
+    volumes:
+      - ./scripts/run-migrations.sh:/run-migrations.sh:ro          # Mounts the migration runner script as read-only inside the containe
+      - ./data/database/migrations:/migrations:ro                  # Mounts the folder containing all SQL migration files 
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: root
+      MIGRATIONS_DIR: /migrations
+    entrypoint: ["/bin/bash", "/run-migrations.sh"]                # Replaces the default MySQL entrypoint and executes the script
+    restart: "no"                                                  # Runs once and exits (used for one-shot migration jobs)
+
+
+  benchmarks:
+    # this it will be the image from digitalocean
+    image: registry.digitalocean.com/mi-registro/benchmarks:1.0.0    #--------------------------real imageeeeeen from digital----------------------------
+    ports:
+      - 8000:80
+
+    volumes:                      
+      - ./data/benchmarks/uploads:/var/www/html/writable/uploads # Uploads
+    env_file:
+      - .env
+    environment:      
+      app_baseURL: https://benchmarks-test.midominio.com        #-------------------------- Test domain or endpoint  ----------------------------
+      database_default_database: benchmarks 
+      db_host: db
+      db_user: root
+      db_pass: root
+    depends_on:
+      - db
+      - migrate   # Ensures migrations run before app starts
+
+  signup:
+    image: shinsenter/codeigniter4:php7.4
+    ports:
+      - 8001:80
+    volumes:
+      - ./eze-benchmarks_signup:/var/www/html
+      - ./data/signup/writable:/var/www/html/writable   
+    env_file:
+      - .env
+    environment:      
+      app_baseURL: http://localhost:8001
+      database_default_database: signup  
+    depends_on:
+      - db
+
+  study:
+    image: shinsenter/codeigniter4:php7.4
+    ports:
+      - 8002:80
+    volumes:
+      - ./eze-benchmarks_study:/var/www/html      
+      - ./data/study/writable:/var/www/html/study
+    env_file:
+      - .env
+    environment:      
+      app_baseURL: http://localhost:8002
+      database_default_database: study
+    depends_on:
+      - db
